@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -15,6 +16,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.DataOutputStream;
 
 public class MainActivity extends Activity {
 
@@ -25,7 +27,10 @@ public class MainActivity extends Activity {
     private TextView tvSelectedFile;
     private TextView tvLog;
     private Button btnRunScript;
+    private EditText etInput;
+    private Button btnSendInput;
     private String selectedScriptPath = null;
+    private DataOutputStream processInput;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,6 +41,8 @@ public class MainActivity extends Activity {
         btnRunScript = findViewById(R.id.btnRunScript);
         tvSelectedFile = findViewById(R.id.tvSelectedFile);
         tvLog = findViewById(R.id.tvLog);
+        etInput = findViewById(R.id.etInput);
+        btnSendInput = findViewById(R.id.btnSendInput);
 
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         String lastScript = prefs.getString(PREF_LAST_SCRIPT, null);
@@ -56,6 +63,22 @@ public class MainActivity extends Activity {
         btnRunScript.setOnClickListener(v -> {
             if (selectedScriptPath != null) {
                 executeRootScript(selectedScriptPath);
+            }
+        });
+
+        btnSendInput.setOnClickListener(v -> {
+            if (processInput != null) {
+                try {
+                    String input = etInput.getText().toString() + "\n";
+                    processInput.writeBytes(input);
+                    processInput.flush();
+                    log("-> " + input.trim());
+                    etInput.setText("");
+                } catch (Exception e) {
+                    log("Failed to send input: " + e.getMessage());
+                }
+            } else {
+                log("No active process to send input to.");
             }
         });
     }
@@ -100,26 +123,39 @@ public class MainActivity extends Activity {
         log("Requesting root access...");
         new Thread(() -> {
             try {
-                Process process = Runtime.getRuntime().exec("su -c sh " + scriptPath);
+                Process process = Runtime.getRuntime().exec("su");
+                processInput = new DataOutputStream(process.getOutputStream());
+                
+                // Start the script
+                processInput.writeBytes("sh " + scriptPath + "\n");
+                processInput.flush();
                 
                 BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
                 BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
                 
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    final String logLine = line;
-                    runOnUiThread(() -> log(logLine));
-                }
+                // Read stdout in a separate thread so we don't block stderr
+                new Thread(() -> {
+                    try {
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            final String logLine = line;
+                            runOnUiThread(() -> log(logLine));
+                        }
+                    } catch (Exception ignored) {}
+                }).start();
                 
+                String line;
                 while ((line = errorReader.readLine()) != null) {
                     final String logLine = "ERROR: " + line;
                     runOnUiThread(() -> log(logLine));
                 }
                 
                 int exitCode = process.waitFor();
+                processInput = null;
                 runOnUiThread(() -> log("Process exited with code: " + exitCode));
                 
             } catch (Exception e) {
+                processInput = null;
                 runOnUiThread(() -> log("Execution failed: " + e.getMessage()));
             }
         }).start();

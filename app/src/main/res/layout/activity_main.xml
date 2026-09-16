@@ -14,16 +14,16 @@
         android:textStyle="bold"
         android:textColor="#FFFFFF"
         android:gravity="center"
-        android:layout_marginBottom="24dp"/>
+        android:layout_marginBottom="16dp"/>
 
     <Button
         android:id="@+id/btnSelectScript"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
+        android:layout_height="50dp"
         android:text="1. Select .sh Script"
         android:backgroundTint="#1976D2"
         android:textColor="#FFFFFF"
-        android:layout_marginBottom="16dp"/>
+        android:layout_marginBottom="8dp"/>
 
     <TextView
         android:id="@+id/tvSelectedFile"
@@ -31,17 +31,43 @@
         android:layout_height="wrap_content"
         android:text="No script selected"
         android:textColor="#AAAAAA"
-        android:layout_marginBottom="24dp"/>
+        android:layout_marginBottom="16dp"/>
 
     <Button
         android:id="@+id/btnRunScript"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
+        android:layout_height="50dp"
         android:text="2. Execute as Root"
         android:backgroundTint="#388E3C"
         android:textColor="#FFFFFF"
         android:enabled="false"
-        android:layout_marginBottom="24dp"/>
+        android:layout_marginBottom="16dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp">
+        
+        <EditText
+            android:id="@+id/etInput"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:hint="Type input here (e.g. y)"
+            android:textColorHint="#888888"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#FFFFFF"
+            android:inputType="text"/>
+            
+        <Button
+            android:id="@+id/btnSendInput"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Send"
+            android:backgroundTint="#555555"
+            android:textColor="#FFFFFF"/>
+    </LinearLayout>
 
     <TextView
         android:layout_width="match_parent"
